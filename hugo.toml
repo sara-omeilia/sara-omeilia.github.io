@@ -1,0 +1,9 @@
+baseURL = "https://sara-omeilia.github.io/"
+locale = "en-US"
+title = "Sara O'Meilia"
+
+[params]
+  description = "Personal site of Sara O'Meilia"
+
+[markup.goldmark.renderer]
+  unsafe = false
