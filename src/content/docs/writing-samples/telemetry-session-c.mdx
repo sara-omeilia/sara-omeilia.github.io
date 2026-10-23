@@ -1,0 +1,126 @@
+---
+title: Telemetry and session APIs for the C SDK
+description: Description
+sidebar:
+    label: Telemetry and session data
+    order: 2005
+    badge:
+        text: Limited release
+        variant: caution
+---
+
+The Telemetry, Sessions, Latency, and Encoder APIs enable your game to tell the backend team what's happening, analytics events, and read-only information about current play sessions.
+
+## Session APIs
+
+A session is one continuous play that the SDK assigns an ID and exposes some context. The context variables enables Company to flip features on or off without a game patch such as A/B tests, regional toggles, and more.
+
+Here is an example of read-only information provided by the Session APIs:
+```c
+// A unique ID for this play session — log it with bug reports
+const char* session_id = ngp_sdk_get_gameplay_session_id(sdk);
+
+// Server location (only meaningful on cloud)
+ngp_session_execution_region region =
+    ngp_session_get_execution_region(sdk);
+// region.country_code, region.latitude, region.longitude
+
+// Configuration values set by Company (game-tunable knobs)
+int   tutorial_skip = ngp_session_get_context_int   (sdk, "tutorial_skip", 0);
+bool  hd_textures   = ngp_session_get_context_bool  (sdk, "hd_textures",   false);
+const char* greet   = ngp_session_get_context_string(sdk, "greeting",      "Hi!");
+```
+
+:::tip[Session tips]
+The strings returned by `_get_context_string` and the region pointer are valid until the next call to that same function. Copy them if you need to keep them.<br/>
+The session ID lives as long as the SDK does.
+:::
+
+## Telemetry APIs
+
+The Telemetry APIs are the fire-and-forget analytics that tell the backend what happened. There is no callback because the SDK queues the event and ships it. It the network is down, the SDK retries silently.
+
+There is only one function: 
+```c
+ngp_telemetry_log_event(player, event_type, event_payload);
+```
+
+The most useful `event_type` values include:
+
+| Event | When to use |
+| --- | --- |
+| `NEW_GAME_START` | A player picks "New Game" |
+| `FTUE_START` | A first-time player starts the tutorial |
+| `FTUE_STEP_COMPLETE` | Each tutorial step done (with step number) |
+| `FTUE_COMPLETE` | A player finishs the tutorial |
+| `PROGRESS_CHECKPOINT_COMPLETE` | A player has beaten a boss, cleared a level, and so on |
+| `GAME_COMPLETE` | A player finished the whole game |
+| `CUSTOM` | Whatever you want, with a JSON payload |
+
+
+Here is an example using the `CUSTOM` event to record when a player uses a powerup in your game:
+```c
+ngp_telemetry_in_game_event_custom custom = {
+    .name = "player_used_powerup",
+    .json_payload = "{\"powerup\":\"shield\",\"level\":3}",
+};
+ngp_telemetry_log_event(
+    player,
+    NGP_TELEMETRY_IN_GAME_EVENT_TYPE_CUSTOM,
+    &custom);
+```
+
+## Latency APIs
+
+In the C SDK, you don't use latency directly through `latency.h`. You read it through other APIs such as `ngp_controller_get_latency(controller)` (per-controller input latency) and `ngp_display_get_latency(display)` (whole-pipeline input and video latency). 
+
+The structure is the same everywhere:
+```c
+typedef struct ngp_latency_measurement {
+    int32_t value_ms;
+    int64_t measured_at_micros;
+} ngp_latency_measurement;
+```
+
+## Encoder APIs
+
+The Encoder APIs only matter for Cloud games. Your game's output is encoded to video and sent to the player when run on Company's servers. Use the Encoder APIs to help the encoder work better by telling it what parts of the screen are most important and when you're cutting to a new scene.
+
+To tell the encoder what the important parts of the screen (regions of interest) are,
+```c
+// On startup, find out how many regions the encoder will pay attention to
+size_t max_rois = ngp_encoder_get_maximum_regions_of_interest(sdk);
+
+// Every frame, hand it a list
+ngp_encoder_region_of_interest rois[3] = {
+    { .x_norm = 0.4f, .y_norm = 0.85f, .w_norm = 0.2f, .h_norm = 0.1f,
+      .content_type = NGP_ENCODER_CONTENT_TYPE_TEXT,
+      .name = "subtitle_bar" },
+    { .x_norm = 0.45f, .y_norm = 0.1f, .w_norm = 0.1f, .h_norm = 0.15f,
+      .content_type = NGP_ENCODER_CONTENT_TYPE_FACE,
+      .name = "character_portrait" },
+    { .x_norm = 0.0f, .y_norm = 0.0f, .w_norm = 1.0f, .h_norm = 1.0f,
+      .content_type = NGP_ENCODER_CONTENT_TYPE_DEFAULT,
+      .name = "whole_screen" },
+};
+ngp_encoder_set_current_frame_regions_of_interest(sdk, rois, 3);
+```
+
+Coordinates are normalized (0.0 to 1.0). `CONTENT_TYPE` hints what the encoder should preserve details in:
+- `TEXT` like subtitles, UI labels, and the like need sharp edges.
+- `FACE` (character portraits) needs smooth gradients.
+- `DEFAULT` is all other content.
+
+If you ask for more regions than `max_rois`, the SDK only honors the first `max_rois`.
+
+When you change scenes, call `ngp_encoder_notify_scene_change(sdk);` to tell the encoder to start fresh. Without this hint, the first frame of a new scene could look blocky.
+
+## Best practices for telemetry and backend APIs
+
+- **Log telemetry events at meaningful moments, not on every frame.**
+- **Always include the session ID in bug reports and support flows.** It's the bridge from "this happened to me" to "I can find your logs in our system."
+- **Use context variables for tunables — but ship sensible defaults.** Don't make the default branch crash. Treat context as "the server can override these," not "the server must provide these."
+- **Send encoder hints every frame, even if they're the same.** It's a set-style API, not a change-style one — the encoder needs the current state per-frame.
+- **Call `notify_scene_change` on cuts**, especially loading screens. The visual quality difference is real.
+- **For custom telemetry, use a schema.** Decide once what shape your `json_payload` takes per event name, and stick to it.
+- **Treat telemetry as fire-and-forget.** Don't try to wait for it to send before progressing the game. The SDK takes care of retries.

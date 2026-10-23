@@ -1,0 +1,126 @@
+---
+title: Social-related APIs for the C SDK
+description: Overview of the Social, Profiles, Safety, and Voice APIs enable you to create an enjoyable player community around your game.
+sidebar:
+    label: Social experience
+    order: 2002
+    badge:
+        text: Limited release
+        variant: caution
+---
+
+The Social, Profiles, Safety, and Voice APIs enable you to create an enjoyable player community around your game. Profiles are the foundation that social and voice build from with the safety APIs as the gate to enable text communications and voice chat.
+
+```
+                         ┌──────────────┐
+                         │   safety.h   │  moderation — required gate
+                         └──────┬───────┘
+                                │
+                ┌───────────────┼───────────────┐
+                ▼                               ▼
+         ┌──────────────┐                ┌──────────────┐
+         │   social.h   │                │   voice.h    │  voice chat
+         │ (friends,    │                │ (channels,   │ 
+         │  presence)   │                │  audio state)│  
+         └──────┬───────┘                └──────┬───────┘
+                │                               │
+                └───────────────┬───────────────┘
+                                ▼
+                         ┌──────────────┐
+                         │  profiles.h  │  who's who
+                         └──────────────┘
+```
+
+## Profiles APIs
+
+Every player is identified by `ngp_profile` that contains the `player_id` (the internal, stable identifier) and `handle` (a player's public-facing display name for the UI). You access the profile from the Company account (`ngp_account`). You then use `ngp_profile` for social and voice events. You may also need the profile APIs to render a player's name in other places of your UI, such as a leaderboard.
+
+## Social APIs
+
+The Social APIs scope to a single `ngp_player` and how that player relates to others. These APIs include friends, blocking, reporting, and a player's presence.
+
+Presence indicates a player's online status and what they're doing. `ngp_social_presence` tells you when a player is online, in what game, and can be used to broadcast this information to other players (if they are friends and enabled by the player) to see.
+
+Friends APIs enable relationships between your players and helps maintain a positive play experience (blocking or reporting a player when needed). A series of events fire when players add, remove, or block other players through the Company UI (`Company_modal.h`).
+
+```c
+void ngp_social_show_social_modal(ngp_player* player, ngp_player_id player_id); 
+// Show the Social modal enabling your player to send, accept, or ignore a friend request
+
+void ngp_social_show_block_player_modal(ngp_player* player, ngp_player_id player_id); 
+// Show the Block Player modal enabling a player to block another player
+
+void ngp_social_show_report_player_modal(ngp_player* player, ngp_player_id player_id); 
+// Show the Report Player modal enabling a player to report another player
+```
+
+## Voice APIs
+
+The Voice APIs enable voice chat functionality in your game, and these APIs are scoped to the C SDK, not your players. There is only one active voice channel per SDK instance.
+
+The lifecycle of the voice APIs involve,
+```c
+// 1. Join a channel (by ID — your matchmaking layer hands you the ID)
+ngp_voice_join_channel(sdk, "channel-xyz", on_join_done, game);
+
+// 2. Listen for state changes — CONNECTING -> CONNECTED, etc.
+ngp_voice_channel_add_state_changed_callback(channel, on_state_changed, game);
+
+// 3. Listen for players coming and going
+ngp_voice_channel_add_player_added_callback  (channel, on_player_added,   game);
+ngp_voice_channel_add_player_removed_callback(channel, on_player_removed, game);
+
+// 4. Listen for who's currently talking
+ngp_voice_channel_add_player_audio_state_changed_callback(
+    channel, on_audio_state_changed, game);
+
+// 5. Eventually...
+ngp_voice_leave_channel(sdk);
+```
+
+Each player has their own `audio_state` that cycles between:
+- `IDLE` - Connected, but not talking.
+- `MUTED` - Microphone off.
+- `UNMUTED` - Microphone on, but not actively speaking.
+- `SPEAKING` - Actively speaking/making sound. This is where you visually indicate a player is speaking in your UI.
+
+## Safety APIs
+
+The Safety APIs are the moderation gate for any player-generated text such as chat messages, custom handles, etc. Before you display or transmit any player-generated text, you should call `ngp_safety_moderate_text`.
+
+Here is an example of moderating a player's text in chat:
+```c
+void on_moderation_done(ngp_result result,
+                        const ngp_safety_moderate_text_response* resp,
+                        void* user_data) {
+    if (!result.ok) return;
+    if (resp->is_text_safe) {
+        // Original text is fine — show it.
+        broadcast_chat(original_text);
+    } else if (resp->masked_text) {
+        // Show the censored version (e.g. "h***").
+        broadcast_chat(resp->masked_text);
+    } else {
+        // No safe version — drop the message.
+    }
+}
+
+ngp_safety_moderate_text(
+    player,
+    "the message the user typed",
+    NGP_SAFETY_TEXT_CATEGORY_CHAT_MESSAGE,
+    NGP_SAFETY_RATING_TEEN,    // pick based on the game's audience
+    on_moderation_done, game);
+```
+
+See the [Trust and safety requirements](/release-requirements/trust-safety-requirements/) for related implementation expectations.
+
+## Best practices for the social experience APIs
+
+- **Always moderate text before display.** Even handles.
+- **Pick the right safety rating for your game's audience.** This is becoming increasingly important with different regional legislation regarding the download and playability of applications and games.
+- **Don't build your own "add friend" UI.** Open Company's modal instead.
+- **Treat presence as advisory, not authoritative.** "Online" might lag reality by seconds. Don't gate game logic on it.
+- **For voice, copy data out of callbacks immediately.** The pointers are valid for the callback's lifetime only.
+    - **One voice channel at a time.** If you need to switch, call `leave_channel` first, wait for the state callback to confirm, then `join_channel` on the new one.
+- **Show audio-state visually.** Players really want to know who's talking — light up the avatar, badge the icon, etc.

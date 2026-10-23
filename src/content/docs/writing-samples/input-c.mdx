@@ -1,0 +1,107 @@
+---
+title: Games input APIs for the C SDK
+description: You use the Controller APIs to connect/disconnect, query controller status, and listen for input specifics in the C SDK.
+sidebar:
+    label: Game inputs
+    order: 2001
+    badge:
+        text: Limited release
+        variant: caution
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+You use the Controller APIs to connect/disconnect, query controller status, and listen for input specifics. For Company, controller can be the **Company Game Controller (NGC)**, a keyboard, a mouse, or some combination. When your players pick up a controller, the SDK calls your "add controller" callback. When they put it down, you get your "controller removed" callback. In between, you bind callbacks for the input types you care about and the C SDK pushes input events to you.
+
+```
+                                        ┌───────────────────────────┐
+   Player plugs in the controller ───▶  │ controller_added callback │
+                                        │  (you get ngp_controller) │
+                                        └──────────┬────────────────┘
+                                                   │  you call:
+                                                   │  add_gamepad_input_received_callback
+                                                   │  add_keyboard_input_received_callback
+                                                   │  add_mouse_input_received_callback
+                                                   ▼
+                                        ┌─────────────────────────────────┐
+   Player presses A button ───▶         │ gamepad_input_received callback │
+                                        │  (with raw_action data)         │
+                                        └─────────────────────────────────┘
+                                                   │
+                                                   │
+                                        ┌─────────────────────────────┐
+    Player unplugs the controller  ───▶ │ controller_removed callback │
+                                        │  (your pointer is now       │
+                                        │   invalid — drop it!)       │
+                                        └─────────────────────────────┘
+```
+
+## Controller APIs
+
+To use the Controller APIs, you should:
+
+<Steps>
+
+1. Start by setting the input source for any secondary players' controllers (the primary player's input is always handled by the operating system). The default is for all input events are handled by the operating system. Use `ngp_sdk_set_input_source(sdk, NGP_SDK_INPUT_SOURCE_SDK);` to route secondary player inputs through the controller input events.
+2. Listen for when controller connect and disconnect. Be sure to cache the pointer and not the index, it isn't ordered.
+    ```c
+    void on_controller_added(ngp_controller* controller, void* user_data) {
+        MyGame* game = (MyGame*)user_data;
+        game->bind_listeners(controller);
+    }
+
+    void on_controller_removed(ngp_controller* controller, void* user_data) {
+        MyGame* game = (MyGame*)user_data;
+        game->forget(controller);   // drop any pointers to this controller
+    }
+
+    ngp_sdk_add_controller_added_callback(sdk, on_controller_added, game);
+    ngp_sdk_add_controller_removed_callback(sdk, on_controller_removed, game);
+    ```
+3. Bind input callbacks to each controller. These fire safely on your game thread through `ngp_sdk_run_callbacks()`.
+    ```c
+    void on_gamepad_input(ngp_controller* c,
+                      const ngp_controller_gamepad_input_event* ev,
+                      void* user_data) {
+    // ev has an array of "raw_actions" — each is a button or axis change.
+    // Look at controller_input.h for the action codes.
+    }
+
+    void on_keyboard_input(ngp_controller* c,
+                       const ngp_controller_keyboard_input_event* ev,
+                       void* user_data) {
+    // ev->key_code is a Linux input-event-code (KEY_W, KEY_SPACE, ...)
+    // ev->pressed tells you if it just went down or up.
+    }
+
+    void on_mouse_input(ngp_controller* c,
+                    const ngp_controller_mouse_input_event* ev,
+                    void* user_data) {
+    // ev->x, ev->y for relative motion; ev->wheel for scroll; ev->buttons for state.
+    }
+
+    ngp_controller_add_gamepad_input_received_callback (c, on_gamepad_input,  game);
+    ngp_controller_add_keyboard_input_received_callback(c, on_keyboard_input, game);
+    ngp_controller_add_mouse_input_received_callback   (c, on_mouse_input,    game);
+    ```
+4. Optionally, you can a controller's axis range for things like trigger calibration, deadzones, and more.
+    ```c
+    void on_input_connected(ngp_controller* c,
+                        const ngp_controller_input_connected* ev,
+                        void* user_data) {
+    // ev contains device_type (NGC/keyboard/mouse) and a list of
+    // available axes with their min/max so you can normalize them.
+    }
+
+    ngp_controller_add_input_connected_callback(c, on_input_connected, game);
+    ```
+</Steps>
+
+## Best practices for the controller
+
+- **Bind your callbacks in `controller_added`, not at startup.**
+- **Drop the pointer when you get `controller_removed`.** Using it after that is undefined behavior. Keep your controller map keyed by `ngp_controller*` and erase the entry on remove.
+- **Use `input_connected` to learn axis ranges.** Don't hardcode any axis ranges. Read it from the device's definitions.
+- **Always handle the keyboard and mouse.** Company run on a lot of devices. A player might pair a Bluetooth keyboard at any time.
+- **Use the SDK's input source (`NGP_SDK_INPUT_SOURCE_SDK`) when targeting cloud/secondary players.** Without it, you'll only get the primary user's input from the operating system.
+
