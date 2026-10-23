@@ -1,0 +1,104 @@
+---
+title: Company service integration APIs for the C SDK
+description: Overview of the APIs for integrating a game with the Company service for the C SDK.
+sidebar:
+    label: Company integration
+    order: 2004
+    badge:
+        text: Limited release
+        variant: caution
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+The Company Modal, Deeplinks, Custom Connect Flow, and Display APIs help integrate your game seamlessly as part of the Company service experience for your players. These APIs can overlay the Company UI at key interactions (achievements, friends list, blocking/reporting other players, and more), send players to your game from a link, present a QR code to pair the **Company Game Controller (NGC)**, and tell you when your game is on-screen or hidden.
+
+## Company modal overlay
+
+When players select the Company button, Company overlays a UI modal on top of your game. Your main interaction with this overlay is to pause your game while you don't have the input focus; you get this information through one bool with a single callback.
+
+```c
+CODE REDACTED
+```
+
+## Deeplinks APIs
+
+A deeplink is a URL that can launch your game with a payload you choose. You can use deeplinks to streamline a player's journey to specific content, bypassing navigation through introductory menus and selections. These links can be integrated in various locations, such as social media posts, push notifications, within Company's Game Discovery section, and more. 
+
+Any players that don't already have the game installed will be routed to their respective app store (**Google Play Store** or **Apple App Store**) to download it.
+
+When you create a link, the payload is binary and you should keep it small. This is an example for creating a deeplink in the C SDK:
+```c
+CODE REDACTED
+```
+
+When a player receives and clicks on a deeplink, the device launches your game and the SDK fires your received callback with the incoming URL. You then call `get_context` on the URL to retrieve the payload.
+
+```c
+CODE REDACTED
+```
+
+Deeplinks are per-player, so bind your callbacks on a specific `ngp_player`, not the SDK.
+
+## Custom connect flow
+
+For Cloud games, players connect their mobile device as a controller by scanning a QR code through the **Company Game Controller (NGC)** app. You only need to use the Custom Connect Flow APIs if your game uses the [custom connect flow](/multiplayer/custom-connect-flow) option. If your game uses the standard connection flow, Company renders our own pairing UI.
+
+The C SDK provides the QR code as a raw RGBA byte buffer that you upload to a texture and draw it.
+
+To setup the controller QR code,
+
+<Steps>
+1. Decide the resolution you want
+	```c
+	CODE REDACTED
+	```
+2. Match the engine's texture coordinates (for example, some engines flip Y)
+	```c
+	CODE REDACTED
+    ```
+3. Listen for changes because the SDK regenerates the QR code periodically
+	```c
+	CODE REDACTED
+    ```
+</Steps>
+
+When the QR code changes, don't stash the pointer. Copy the bytes into your texture (or your own buffer) inside the callback. The C SDK reuses the storage on the next tick.
+
+```c
+CODE REDACTED
+```
+
+## Display APIs
+*(Sara note: Add relevant links to other latency and input content as needed.)*
+
+The Display APIs inform you if your game is visible, what is the input/video latency, and what input devices are available. Display latency is related but is still separate from controller latency; use display latency for global UI tuning and controller latency for connection warnings on a specific controller.
+
+The Display APIs get you the primary display:
+```c
+CODE REDACTED
+```
+
+And so you can pause your game when it's hidden (similar to the Company modal):
+```c
+CODE REDACTED
+```
+
+Read the display latency to dynamically tune things such as turning off motion blur on high-latency connections, show a streaming quality badge, prefer simpler input schemes, and more.
+```c
+CODE REDACTED
+```
+
+You can also use the Display APIs to see what inputs are connected. These are great for adaptive UI hints such as "Press A" versus "Press Space" versus "Tap to start".
+```c
+CODE REDACTED
+```
+
+## Best practices for integrating with the Company service
+
+- **Wire both `modal-active` and `display-inactive` to the same `pause()` function.** This reduces a common bug of pausing only on modal events and missing the case where the OS minimizes your game.
+- **Check current state on startup, don't rely only on callbacks.** Both modal and display state could already be in their "inactive" state when your game launches. Call `is_active()` once at boot to sync up.
+- **Treat deeplink payloads as untrusted input.** They came from outside your game. Validate every field, bound every length, don't deserialize directly into game state.
+- **For QR codes, copy bytes immediately.** Don't hold the pointer past the callback. Don't rely on it surviving the next `run_callbacks`.
+- **Use `available_input` for hints, not for behavior.** Some players may have a keyboard plugged in but prefer the controller. Adapt hints, but let players still use whatever they want.
+- **Don't poll latency every frame.** It changes slowly. Once a second is plenty for UI tuning.

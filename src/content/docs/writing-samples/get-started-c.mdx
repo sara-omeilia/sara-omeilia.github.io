@@ -1,0 +1,221 @@
+---
+title: Get started with the C SDK
+description: Overview and initial steps to get started using the C SDK for Company.
+sidebar:
+    order: 1000
+    badge:
+        text: Limited release
+        variant: caution
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import { FileTree } from '@astrojs/starlight/components';
+
+:::caution[Limited release]
+The C SDK is a limited release SDK for Company. It does not follow a standard release schedule, and it is only available to specific partners.
+
+Speak with your Company Producer for more information and access.
+:::
+
+The C SDK supports Company Cloud games through an engine-agnostic C API. It is a series of shared libraries (one for each platform) and a set of header files. The headers are platform-agnostic.
+
+## Download the C SDK
+
+To download the C SDK,
+
+<Steps>
+
+1. Log into **Games Workspace**.
+2. Select your game.
+3. From **SDK & Credentials**, select the **Download SDK and Credentials** dropdown and select **C**.
+4. Select **Download** for the latest C SDK.
+
+</Steps>
+
+Once downloaded, you can see the shared header files within the `include/` folder in the C SDK:
+<FileTree>
+
+- Company_games_sdk_c-XXXX.X.X/
+    - **include/** the headers (shared by all platforms)
+        - Company_games_sdk_export.h
+        - Company/
+            - games/
+                - sdk.h the main one
+                - account.h
+                - player.h
+                - config.h
+                - error.h
+                - types.h
+                - cppapi.h C++ helpers; ignore in pure C
+                - api_macros.h
+                - api/ feature headers: achievements, leaderboards, etc.
+                    - achievements.h
+                    - leaderboards.h
+                    - ...
+
+</FileTree>
+
+There are two library files per platform that your game needs at runtime: `libCompany_games_sdk` and `libngp_ssic.1`.
+<FileTree>
+
+- Company_games_sdk_C-XXXX.X.X/
+    - **darwin/** macOS binaries
+        - arm64/lib/ Apple Silicon (M1/M2/M3 Macs)
+            - libCompany_games_sdk.dylib
+            - libngp_ssic.1.dylib
+        - x86_64/lib/ Intel Macs
+            - libCompany_games_sdk.dylib
+            - libngp_ssic.1.dylib
+    - **linux/x86_84/lib/** Desktop Linux (Intel/AMD 64-bit)
+        - libCompany_games_sdk.so
+        - libngp_ssic.1.so
+    - **cloud/x86_64/lib/** Company Cloud Gaming (separate build)
+        - libCompany_games_sdk.so
+        - libngp_ssic.1.so
+    - **windows/x86_64/** Windows 64-bit
+        - bin/ runtime DLLs (these go next to your .exe)
+            - Company_games_sdk.dll
+            - libngp_ssic.1.dll
+            - libgcc_s_seh-1.dll compiler runtime
+            - libstdc++-6.dll compiler runtime
+            - libwinpthread-1.dll compiler runtime
+        - lib/
+            - Company_games_sdk.lib import library (linker uses this)
+
+</FileTree>
+
+:::note[Linux versus Cloud libraries]
+The Cloud and Linux SDK binaries are different and mutally-exclusive.
+
+The Linux SDK binary operates similarly to the Windows and Mac SDK binaries, and they support the **Controller Editor** from a desktop. 
+
+The Cloud SDK binary only works while on OCGA and does not support the **Controller Editor**.
+:::
+
+## C integration
+
+After downloading the C SDK from **Games Workspace**, you must integrate it with your game. For C++ engines, see the [C++ integration](#c-integration-1) guidance and example.
+
+<Steps>
+
+1. Copy both library files (`libCompany_games_sdk` and `libngp_ssic.1`) for your platform next to your game executable.
+    - Mac users need to be sure you are using the correct library files for your OS.
+        - Apple Silicon (M1/M2/M3 Macs) should use the libraries from `darwin/arm64/lib/`.
+        - Intel Macs should use the libraries from `darwin/x86_64/lib/`.
+    - Windows users must copy all the DLLs from `windows/x86_64/bin/` as well as the library files next to your .exe.
+2. Copy the `/Company` folder with all its contents next to your .exe.
+3. Configure the SDK. The `project_root` should be an absolute path.
+
+    ```c
+    CODE REDACTED
+    ```
+
+4. Include `ngp_sdk_run_callbacks` in your event loop to receive all state changes and callbacks on the main thread. (Sara note: Link to relevant event loop and threading section/s on the framework page.)
+
+    ```c
+    CODE REDACTED
+    ```
+
+5. Log in to access the account object. This is required to access your players.
+
+    ```c
+    CODE REDACTED
+    ```
+
+6. Call the player object to use the different APIs *(Sara note: Link to APIs section on the framework page)*.
+
+    ```c
+    CODE REDACTED
+    ```
+
+7. Destroy the SDK when done.
+
+    ```c
+    CODE REDACTED
+    ```
+
+</Steps>
+
+### C integration example
+
+This example integrates the C SDK in a basic C application with inline comments explaining each step.
+
+```c
+CODE REDACTED
+```
+
+## C++ integration
+
+After downloading the C SDK from **Games Workspace**, you must integrate it with your game. For C++ engines, the C SDK includes a few header-only, std-only, C++11-compliant helpers to ease common tasks. These operate on top of the C API, but do not modify it in any way.
+
+The C++ helper adds macros and classes that simplify binding async and event callbacks for object methods.
+
+<Steps>
+
+1. Copy the library files for your platform next to your game executable.
+    - Mac users need to be sure you are using the correct library files for your OS.
+        - Apple Silicon (M1/M2/M3 Macs) should use the libraries from `darwin/arm64/lib/`.
+        - Intel Macs should use the libraries from `darwin/x86_64/lib/`.
+    - Windows users must copy all the DLLs from `windows/x86_64/bin/` as well as the library files next to your .exe.
+2. Copy the `/Company` folder with all its contents next to your .exe. This is where the `cppapi.h` file exists.
+3. Configure the SDK. The `project_root` should be an absolute path.
+
+    ```c++
+    CODE REDACTED
+    ```
+
+4. Include `ngp_sdk_run_callbacks` in your event loop to receive all state changes and callbacks on the main thread. *(Sara note: Link to relevant event loop and threading section/s on the framework page.)*
+
+    ```c++
+    CODE REDACTED
+    ```
+
+5. Log in to access the account object. This is required to next access your players.
+
+    ```c++
+    CODE REDACTED
+    ```
+
+6. Call the player object to use the different APIs *(Sara note: Link to APIs section on the framework page).* 
+
+    ```c++
+    CODE REDACTED
+    ```
+
+7. Destroy the SDK when done. 
+
+    ```c++
+    CODE REDACTED
+    ```
+
+</Steps>
+
+### C++ integration example
+
+This example shows macros and classes that simplify binding async and event callbacks for object methods.
+
+```c++
+CODE REDACTED
+```
+
+## Connect to the Controller Editor
+
+The **Controller Editor** enables you to design the **Company Game Controller** layout, connection mode, and configurations. This information exists in a `controller.yaml` file that must ship inside your game's `Company/` folder.
+
+To connect the **Controller Editor** to your Windows, Mac, or Linux platform,
+
+<Steps>
+
+1. Set your `project_root` in the SDK configuration.
+
+    ```c
+    CODE REDACTED
+    ```
+
+2. Open the [**Controller Editor**](/game-controller/what-is-the-ngc/#the-controller-editor).
+3. The configuration you set in the first step creates the `Company/` folder that stores your controller configuration .yaml file.
+4. After creating or editing your controller in the **Controller Editor**, the `controller.yaml` (is updated at save.)/(requires you to replace the existing `controller.yaml` file with your most recent export.) < Unsure if either are correct
+
+</Steps>
+
+If you designed a layout in the **Controller Editor** before connecting to your game, you must replace the default `controller.yaml` file in the `Company/` folder with your exported `controller.yaml`.

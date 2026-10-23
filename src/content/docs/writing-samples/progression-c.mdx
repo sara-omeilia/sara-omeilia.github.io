@@ -1,0 +1,120 @@
+---
+title: Player progression APIs for the C SDK
+description: Overview of the player progression APIs include the Achievements, Leaderboards, Stats, and Blob Store APIs.
+sidebar:
+    label: Player progression
+    order: 2003
+    badge:
+        text: Limited release
+        variant: caution
+---
+
+import { Badge } from '@src/components/Components';
+
+Player progression mark a player's advancement in your game and include the Achievements, Leaderboards, Stats, and Blob Store/Cloud Saves APIs. These can be milestones to create goals for your player to aspire toward. They can also build a passive social community for your players to compare and compete with each other.
+
+Stats are the foundational APIs for your leaderboards and achievements to build off. The blobs or cloud saves are arbitrary saved data you configure for your game. All four of these APIs are scoped to the player, `ngp_player*`, and they are all asynchronous so every call takes a callback.
+
+```
+CODE REDACTED
+```
+
+## Stats APIs
+
+The Stats APIs take defined integers and aggregate them based on your configuration that you can then leverage in your UI.
+
+| Aggregation method | Description |
+| --- | --- |
+| `LATEST` | Tracks the player's most recent score. |
+| `MAX` | Tracks the player's highest score. |
+| `MIN` | Tracks the player's lowest score. |
+| `SUM` | Cumulative score for a player. |
+
+For example, this value records 4200 only if it beats the current best for the `MAX` stat. However, for the `SUM` stat, it would record 4200 to a running total.
+
+```c
+CODE REDACTED
+```
+
+## Achievements APIs
+
+Achievements are binary as locked or unlocked. You [create and configure achievements](/live-services/achievements/) in the **Games Workspace**. The SDK uses the **Reference Name** you create, and it cannot be edited once created.
+
+When an achievement is unlocked, it is idempotent (no matter how many times you call it, it has the exact same result as the first call). For example, an achievement that is already unlocked does nothing every time you call it after they've beaten the boss before.
+```c
+CODE REDACTED
+```
+
+### Company achievements panel
+
+The achievements panel is pre-built for the UI, and you should not build your own. *(Sara note: Related link to the Company modal content?)*
+To call the Neflix achievements panel, use
+```c
+CODE REDACTED
+```
+
+## Leaderboards APIs
+
+The Leaderboards APIs read from the stats your game submits and populates a leaderboard. Like achievements, you [create leaderboards](/live-services/leaderboards/#create-a-leaderboard) in the **Games Workspace**. The SDK uses the **Name** you create, and it cannot be edited once created.
+
+Use these leaderboards functions to call different leaderboard information:
+
+<div class="nowrap-first-col">
+| Leaderboard function | Information retrieved |
+| --- | --- |
+| `ngp_leaderboards_get_leaderboard_info` | Get information about a leaderboard itself. |
+| `ngp_leaderboards_get_top_entries` | Get leaderboard entries from the top ranked entry onwards.<br/>Use `ngp_leaderboards_get_more_entries` to show additional entries. |
+| `ngp_leaderboards_get_more_entries` | Get more entries from a leaderboard for pagination.<br/>Use `ngp_leaderboards_get_top_entries` or `ngp_leaderboards_get_player_centric_entries` to get the initial entries.<br/>Use `NGP_LEADERBOARDS_DIRECTION_BEFORE` and `NGP_LEADERBOARDS_DIRECTION_AFTER` for fetching more entries before or after the cursor for pagination. |
+| `ngp_leaderboards_get_player_centric_entries` | Get leaderboard entries the most `max_entries` centered around your currently logged in player versus the global top player. |
+| `ngp_leaderboards_get_player_entry` | Get the current player's entry in the leaderboard. |
+
+</div>
+
+For recurring leaderboards (weekly, daily, etc.), `NGP_LEADERBOARDS_OPTION_CURRENT` gives the active period and `NGP_LEADERBOARDS_OPTION_PREVIOUS` gives the previous leaderboard occurrence. This can be useful for sharing "Last week's winners" or the like.
+
+## Blob store/Cloud saves APIs
+
+A blob is an opaque chunk of binary data scoped per-player on Company's servers. You can use them for save files, custom configs, or anything else you would want to follow the player from device to device.
+
+In relation to other progression data, blobs sit alongside the stats/leaderboards/achievements pipeline. They're for the bulk of game state that doesn't fit into named scalars (a single value data type).
+
+:::note[Blob limits]
+<Badge text="Mobile" variant="pink" />Blobs have a limit of 3MB per slot with 150 slots per profile. <br />
+<Badge text="Cloud" variant="cyan" />Blobs have a limit of 1MB per slot with 150 slots per profile.
+:::
+
+To use blobs, you can list, read, write, and delete them:
+```c
+CODE REDACTED
+```
+
+### Blob store conflicts
+
+The SDK doesn't pick a winner for you when data conflicts occur between remote and local. It is your responsibility to know your save format and decided to keep the new data, merge, or prompt the player about a data conflict.
+
+To resolve blob store conflicts, call `ngp_blobs_write` again with the data you wish to keep. 
+
+For example, a player may be playing your game on two devices. If both write to the same blob, a `conflict` occurs that you must resolve.
+
+```c
+CODE REDACTED
+```
+
+:::tip[Blob storage tips]
+- You can't write empty data. Size 0 returns an error.
+- Blob names are arbitrary strings you choose. Pick a naming convention and stick to it.
+- The blob's `sync_timestamp_unix_epoch` is the Company server's view of when the blob was last written. This can be useful for conflict resolution.
+- Blob store has limits
+    - <Badge text="Mobile" variant="pink" />Blobs have a limit of 3MB per slot with 150 slots per profile.
+    - <Badge text="Cloud" variant="cyan" />Blobs have a limit of 1MB per slot with 150 slots per profile.
+:::
+
+## Best practices for player progression APIs
+
+- **Submit stats eagerly, don't batch.** Backends throttle if needed. Don't hold stats client-side waiting.
+- **`unlock` is idempotent**. Call it whenever the condition is true.
+- **For leaderboards, default to player-centric.** Players care more about their neighborhood than the global top.
+- **Always handle blob conflicts.** Pretending they won't happen leads to "where did my save go?" bug reports.
+- **Pick stable blob names.** Renaming a blob = losing it. If you must rename, write new and delete old in sequence, and handle the case where the player is mid-migration.
+- **Don't put Personally Identifiable Information (PII) in blobs.** They're per-player but they sync over the network. Treat them like cloud storage.
+- **Use the built-in Company achievements panel.**

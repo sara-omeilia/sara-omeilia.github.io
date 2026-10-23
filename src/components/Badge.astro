@@ -1,0 +1,44 @@
+---
+// Starlight's <Badge> plus extra color variants (pink, cyan) used in the writing samples.
+import { Badge as StarlightBadge } from '@astrojs/starlight/components';
+
+type StarlightVariant = 'default' | 'note' | 'danger' | 'success' | 'caution' | 'tip';
+type CustomVariant = 'pink' | 'cyan';
+
+interface Props {
+	text: string;
+	variant?: StarlightVariant | CustomVariant;
+	size?: 'small' | 'medium' | 'large';
+}
+
+const { text, variant = 'default', size } = Astro.props;
+const isCustom = variant === 'pink' || variant === 'cyan';
+---
+
+<StarlightBadge
+	text={text}
+	size={size}
+	variant={isCustom ? 'default' : variant}
+	class={isCustom ? `badge-${variant}` : undefined}
+/>
+
+<style is:global>
+	.sl-badge.badge-pink {
+		--sl-color-bg-badge: #a3195b;
+		--sl-color-border-badge: #e3358a;
+		--sl-color-text-badge: #fff;
+	}
+	.sl-badge.badge-cyan {
+		--sl-color-bg-badge: #0b6b7a;
+		--sl-color-border-badge: #19b3c9;
+		--sl-color-text-badge: #fff;
+	}
+	[data-theme='light'] .sl-badge.badge-pink {
+		--sl-color-bg-badge: #fbd3e6;
+		--sl-color-text-badge: #7a1044;
+	}
+	[data-theme='light'] .sl-badge.badge-cyan {
+		--sl-color-bg-badge: #cdf1f7;
+		--sl-color-text-badge: #064e59;
+	}
+</style>
