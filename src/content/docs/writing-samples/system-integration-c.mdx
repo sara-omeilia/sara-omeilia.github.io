@@ -11,7 +11,7 @@ sidebar:
 
 import { Steps } from '@astrojs/starlight/components';
 
-The Company Modal, Deeplinks, Custom Connect Flow, and Display APIs help integrate your game seamlessly as part of the Company service experience for your players. These APIs can overlay the Company UI at key interactions (achievements, friends list, blocking/reporting other players, and more), send players to your game from a link, present a QR code to pair the **Company Game Controller (NGC)**, and tell you when your game is on-screen or hidden.
+The Company Modal, Deeplinks, Custom Connect Flow, and Display APIs help integrate your game seamlessly as part of the Company service experience for your players. These APIs can overlay the Company UI at key interactions (achievements, friends list, blocking/reporting other players, and more), send players to your game from a link, present a QR code to pair the **Company Game Controller**, and tell you when your game is on-screen or hidden.
 
 ## Company modal overlay
 
@@ -42,7 +42,7 @@ Deeplinks are per-player, so bind your callbacks on a specific `ngp_player`, not
 
 ## Custom connect flow
 
-For Cloud games, players connect their mobile device as a controller by scanning a QR code through the **Company Game Controller (NGC)** app. You only need to use the Custom Connect Flow APIs if your game uses the [custom connect flow](/multiplayer/custom-connect-flow) option. If your game uses the standard connection flow, Company renders our own pairing UI.
+For Cloud games, players connect their mobile device as a controller by scanning a QR code through the **Company Game Controller** app. You only need to use the Custom Connect Flow APIs if your game uses the <span class="former-link">custom connect flow</span> option. If your game uses the standard connection flow, Company renders our own pairing UI.
 
 The C SDK provides the QR code as a raw RGBA byte buffer that you upload to a texture and draw it.
 

@@ -9,6 +9,7 @@ export default defineConfig({
 		starlight({
 			title: "Sara O'Meilia",
 			description: "Personal site of Sara O'Meilia",
+			customCss: ['./src/styles/custom.css'],
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/sara-omeilia' },
 			],
