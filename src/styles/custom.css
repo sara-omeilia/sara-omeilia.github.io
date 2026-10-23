@@ -1,0 +1,10 @@
+/* Keep the first column of a wrapped table on one line. */
+.nowrap-first-col :is(th, td):first-child {
+	white-space: nowrap;
+}
+
+/* Text that linked to the original docs site: underlined, but not link-colored. */
+.former-link {
+	color: inherit;
+	text-decoration: underline;
+}
