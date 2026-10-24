@@ -15,6 +15,10 @@ export default defineConfig({
 			],
 			sidebar: [
 				{
+					label: 'About me',
+					items: [{ autogenerate: { directory: 'about-me' } }],
+				},
+				{
 					label: 'Writing samples',
 					items: [{ autogenerate: { directory: 'writing-samples' } }],
 				},

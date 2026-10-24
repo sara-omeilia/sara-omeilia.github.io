@@ -1,17 +1,14 @@
 ---
 title: Social-related APIs for the C SDK
-description: Overview of the Social, Profiles, Safety, and Voice APIs enable you to create an enjoyable player community around your game.
+description: The Social, Profiles, Safety, and Voice APIs enable you to create an enjoyable player community around your game.
 sidebar:
     label: Social experience
     order: 2002
-    badge:
-        text: Limited release
-        variant: caution
 ---
 
 The Social, Profiles, Safety, and Voice APIs enable you to create an enjoyable player community around your game. Profiles are the foundation that social and voice build from with the safety APIs as the gate to enable text communications and voice chat.
 
-```
+```c
 CODE REDACTED
 ```
 
@@ -25,7 +22,7 @@ The Social APIs scope to a single `ngp_player` and how that player relates to ot
 
 Presence indicates a player's online status and what they're doing. `ngp_social_presence` tells you when a player is online, in what game, and can be used to broadcast this information to other players (if they are friends and enabled by the player) to see.
 
-Friends APIs enable relationships between your players and helps maintain a positive play experience (blocking or reporting a player when needed). A series of events fire when players add, remove, or block other players through the Company UI (`Company_modal.h`).
+Friends APIs enable relationships between your players and help maintain a positive play experience (blocking or reporting a player when needed). A series of events fire when players add, remove, or block other players through the Company UI (`Company_modal.h`).
 
 ```c
 CODE REDACTED
@@ -35,7 +32,7 @@ CODE REDACTED
 
 The Voice APIs enable voice chat functionality in your game, and these APIs are scoped to the C SDK, not your players. There is only one active voice channel per SDK instance.
 
-The lifecycle of the voice APIs involve,
+The lifecycle of the voice APIs involves:
 ```c
 CODE REDACTED
 ```
@@ -50,7 +47,7 @@ Each player has their own `audio_state` that cycles between:
 
 The Safety APIs are the moderation gate for any player-generated text such as chat messages, custom handles, etc. Before you display or transmit any player-generated text, you should call `ngp_safety_moderate_text`.
 
-Here is an example of moderating a player's text in chat:
+The following is an example of moderating a player's text in chat:
 ```c
 CODE REDACTED
 ```

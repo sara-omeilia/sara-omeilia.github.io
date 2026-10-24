@@ -4,9 +4,6 @@ description: Overview of the APIs for integrating a game with the Company servic
 sidebar:
     label: Company integration
     order: 2004
-    badge:
-        text: Limited release
-        variant: caution
 ---
 
 import { Steps } from '@astrojs/starlight/components';
@@ -44,23 +41,25 @@ Deeplinks are per-player, so bind your callbacks on a specific `ngp_player`, not
 
 For Cloud games, players connect their mobile device as a controller by scanning a QR code through the **Company Game Controller** app. You only need to use the Custom Connect Flow APIs if your game uses the <span class="former-link">custom connect flow</span> option. If your game uses the standard connection flow, Company renders our own pairing UI.
 
-The C SDK provides the QR code as a raw RGBA byte buffer that you upload to a texture and draw it.
+The C SDK provides the QR code as a raw RGBA byte buffer that you upload to a texture and draw.
 
-To setup the controller QR code,
+To set up the controller QR code,
 
 <Steps>
-1. Decide the resolution you want
-	```c
-	CODE REDACTED
-	```
-2. Match the engine's texture coordinates (for example, some engines flip Y)
-	```c
-	CODE REDACTED
+
+1. Decide the resolution you want.
+    ```c
+    CODE REDACTED
     ```
-3. Listen for changes because the SDK regenerates the QR code periodically
-	```c
-	CODE REDACTED
+2. Match the engine's texture coordinates (for example, some engines flip Y).
+    ```c
+    CODE REDACTED
     ```
+3. Listen for changes, because the SDK regenerates the QR code periodically.
+    ```c
+    CODE REDACTED
+    ```
+
 </Steps>
 
 When the QR code changes, don't stash the pointer. Copy the bytes into your texture (or your own buffer) inside the callback. The C SDK reuses the storage on the next tick.
@@ -70,7 +69,6 @@ CODE REDACTED
 ```
 
 ## Display APIs
-*(Sara note: Add relevant links to other latency and input content as needed.)*
 
 The Display APIs inform you if your game is visible, what is the input/video latency, and what input devices are available. Display latency is related but is still separate from controller latency; use display latency for global UI tuning and controller latency for connection warnings on a specific controller.
 
@@ -79,12 +77,12 @@ The Display APIs get you the primary display:
 CODE REDACTED
 ```
 
-And so you can pause your game when it's hidden (similar to the Company modal):
+Use it to pause your game when it's hidden (similar to the Company modal):
 ```c
 CODE REDACTED
 ```
 
-Read the display latency to dynamically tune things such as turning off motion blur on high-latency connections, show a streaming quality badge, prefer simpler input schemes, and more.
+Read the display latency to dynamically tune things such as turning off motion blur on high-latency connections, showing a streaming quality badge, preferring simpler input schemes, and more.
 ```c
 CODE REDACTED
 ```

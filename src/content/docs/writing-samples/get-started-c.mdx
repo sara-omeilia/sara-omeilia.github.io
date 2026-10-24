@@ -3,9 +3,6 @@ title: Get started with the C SDK
 description: Overview and initial steps to get started using the C SDK for Company.
 sidebar:
     order: 1000
-    badge:
-        text: Limited release
-        variant: caution
 ---
 
 import { Steps } from '@astrojs/starlight/components';
@@ -25,7 +22,7 @@ To download the C SDK,
 
 <Steps>
 
-1. Log into **Games Workspace**.
+1. Log in to **Games Workspace**.
 2. Select your game.
 3. From **SDK & Credentials**, select the **Download SDK and Credentials** dropdown and select **C**.
 4. Select **Download** for the latest C SDK.
@@ -58,7 +55,7 @@ Once downloaded, you can see the shared header files within the `include/` folde
 There are two library files per platform that your game needs at runtime: `libCompany_games_sdk` and `libngp_ssic.1`.
 <FileTree>
 
-- Company_games_sdk_C-XXXX.X.X/
+- Company_games_sdk_c-XXXX.X.X/
     - **darwin/** macOS binaries
         - arm64/lib/ Apple Silicon (M1/M2/M3 Macs)
             - libCompany_games_sdk.dylib
@@ -66,7 +63,7 @@ There are two library files per platform that your game needs at runtime: `libCo
         - x86_64/lib/ Intel Macs
             - libCompany_games_sdk.dylib
             - libngp_ssic.1.dylib
-    - **linux/x86_84/lib/** Desktop Linux (Intel/AMD 64-bit)
+    - **linux/x86_64/lib/** Desktop Linux (Intel/AMD 64-bit)
         - libCompany_games_sdk.so
         - libngp_ssic.1.so
     - **cloud/x86_64/lib/** Company Cloud Gaming (separate build)
@@ -85,7 +82,7 @@ There are two library files per platform that your game needs at runtime: `libCo
 </FileTree>
 
 :::note[Linux versus Cloud libraries]
-The Cloud and Linux SDK binaries are different and mutally-exclusive.
+The Cloud and Linux SDK binaries are different and mutually exclusive.
 
 The Linux SDK binary operates similarly to the Windows and Mac SDK binaries, and they support the **Controller Editor** from a desktop. 
 
@@ -99,7 +96,7 @@ After downloading the C SDK from **Games Workspace**, you must integrate it with
 <Steps>
 
 1. Copy both library files (`libCompany_games_sdk` and `libngp_ssic.1`) for your platform next to your game executable.
-    - Mac users need to be sure you are using the correct library files for your OS.
+    - Mac users must make sure they are using the correct library files for their hardware.
         - Apple Silicon (M1/M2/M3 Macs) should use the libraries from `darwin/arm64/lib/`.
         - Intel Macs should use the libraries from `darwin/x86_64/lib/`.
     - Windows users must copy all the DLLs from `windows/x86_64/bin/` as well as the library files next to your .exe.
@@ -110,7 +107,7 @@ After downloading the C SDK from **Games Workspace**, you must integrate it with
     CODE REDACTED
     ```
 
-4. Include `ngp_sdk_run_callbacks` in your event loop to receive all state changes and callbacks on the main thread. (Sara note: Link to relevant event loop and threading section/s on the framework page.)
+4. Include `ngp_sdk_run_callbacks` in your event loop to receive all state changes and callbacks on the main thread.
 
     ```c
     CODE REDACTED
@@ -122,7 +119,7 @@ After downloading the C SDK from **Games Workspace**, you must integrate it with
     CODE REDACTED
     ```
 
-6. Call the player object to use the different APIs *(Sara note: Link to APIs section on the framework page)*.
+6. Call the player object to use the different APIs.
 
     ```c
     CODE REDACTED
@@ -153,7 +150,7 @@ The C++ helper adds macros and classes that simplify binding async and event cal
 <Steps>
 
 1. Copy the library files for your platform next to your game executable.
-    - Mac users need to be sure you are using the correct library files for your OS.
+    - Mac users must make sure they are using the correct library files for their hardware.
         - Apple Silicon (M1/M2/M3 Macs) should use the libraries from `darwin/arm64/lib/`.
         - Intel Macs should use the libraries from `darwin/x86_64/lib/`.
     - Windows users must copy all the DLLs from `windows/x86_64/bin/` as well as the library files next to your .exe.
@@ -164,19 +161,19 @@ The C++ helper adds macros and classes that simplify binding async and event cal
     CODE REDACTED
     ```
 
-4. Include `ngp_sdk_run_callbacks` in your event loop to receive all state changes and callbacks on the main thread. *(Sara note: Link to relevant event loop and threading section/s on the framework page.)*
+4. Include `ngp_sdk_run_callbacks` in your event loop to receive all state changes and callbacks on the main thread.
 
     ```c++
     CODE REDACTED
     ```
 
-5. Log in to access the account object. This is required to next access your players.
+5. Log in to access the account object. This is required before you can access your players.
 
     ```c++
     CODE REDACTED
     ```
 
-6. Call the player object to use the different APIs *(Sara note: Link to APIs section on the framework page).* 
+6. Call the player object to use the different APIs.
 
     ```c++
     CODE REDACTED
@@ -206,15 +203,14 @@ To connect the **Controller Editor** to your Windows, Mac, or Linux platform,
 
 <Steps>
 
-1. Set your `project_root` in the SDK configuration.
+1. Set your `project_root` in the SDK configuration. This creates the `Company/` folder that stores your `controller.yaml` file.
 
     ```c
     CODE REDACTED
     ```
 
 2. Open the <span class="former-link">**Controller Editor**</span>.
-3. The configuration you set in the first step creates the `Company/` folder that stores your controller configuration .yaml file.
-4. After creating or editing your controller in the **Controller Editor**, the `controller.yaml` (is updated at save.)/(requires you to replace the existing `controller.yaml` file with your most recent export.) < Unsure if either are correct
+3. After you create or edit your controller in the **Controller Editor**, the `controller.yaml` file updates when you save.
 
 </Steps>
 

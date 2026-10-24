@@ -1,19 +1,16 @@
 ---
 title: Telemetry and session APIs for the C SDK
-description: Description
+description: Overview of the Telemetry, Session, Latency, and Encoder APIs for the C SDK.
 sidebar:
     label: Telemetry and session data
     order: 2005
-    badge:
-        text: Limited release
-        variant: caution
 ---
 
-The Telemetry, Sessions, Latency, and Encoder APIs enable your game to tell the backend team what's happening, analytics events, and read-only information about current play sessions.
+The Telemetry, Sessions, Latency, and Encoder APIs enable your game to send analytics events that tell the backend what's happening, and to read information about the current play session.
 
 ## Session APIs
 
-A session is one continuous play that the SDK assigns an ID and exposes some context. The context variables enables Company to flip features on or off without a game patch such as A/B tests, regional toggles, and more.
+A session is one continuous play session. The SDK assigns each session an ID and exposes some context about it. The context variables enable Company to flip features on or off without a game patch such as A/B tests, regional toggles, and more.
 
 Here is an example of read-only information provided by the Session APIs:
 ```c
@@ -27,7 +24,7 @@ The session ID lives as long as the SDK does.
 
 ## Telemetry APIs
 
-The Telemetry APIs are the fire-and-forget analytics that tell the backend what happened. There is no callback because the SDK queues the event and ships it. It the network is down, the SDK retries silently.
+The Telemetry APIs are the fire-and-forget analytics that tell the backend what happened. There is no callback because the SDK queues the event and ships it. If the network is down, the SDK retries silently.
 
 There is only one function: 
 ```c
@@ -41,13 +38,13 @@ The most useful `event_type` values include:
 | `NEW_GAME_START` | A player picks "New Game" |
 | `FTUE_START` | A first-time player starts the tutorial |
 | `FTUE_STEP_COMPLETE` | Each tutorial step done (with step number) |
-| `FTUE_COMPLETE` | A player finishs the tutorial |
+| `FTUE_COMPLETE` | A player finishes the tutorial |
 | `PROGRESS_CHECKPOINT_COMPLETE` | A player has beaten a boss, cleared a level, and so on |
 | `GAME_COMPLETE` | A player finished the whole game |
 | `CUSTOM` | Whatever you want, with a JSON payload |
 
 
-Here is an example using the `CUSTOM` event to record when a player uses a powerup in your game:
+The following is an example using the `CUSTOM` event to record when a player uses a powerup in your game:
 ```c
 CODE REDACTED
 ```
@@ -65,7 +62,7 @@ CODE REDACTED
 
 The Encoder APIs only matter for Cloud games. Your game's output is encoded to video and sent to the player when run on Company's servers. Use the Encoder APIs to help the encoder work better by telling it what parts of the screen are most important and when you're cutting to a new scene.
 
-To tell the encoder what the important parts of the screen (regions of interest) are,
+To tell the encoder which parts of the screen are important (regions of interest),
 ```c
 CODE REDACTED
 ```
@@ -79,7 +76,7 @@ If you ask for more regions than `max_rois`, the SDK only honors the first `max_
 
 When you change scenes, call `ngp_encoder_notify_scene_change(sdk);` to tell the encoder to start fresh. Without this hint, the first frame of a new scene could look blocky.
 
-## Best practices for telemetry and backend APIs
+## Best practices for telemetry and session APIs
 
 - **Log telemetry events at meaningful moments, not on every frame.**
 - **Always include the session ID in bug reports and support flows.** It's the bridge from "this happened to me" to "I can find your logs in our system."

@@ -1,21 +1,18 @@
 ---
 title: Player progression APIs for the C SDK
-description: Overview of the player progression APIs include the Achievements, Leaderboards, Stats, and Blob Store APIs.
+description: Overview of the player progression APIs, including the Achievements, Leaderboards, Stats, and Blob Store APIs.
 sidebar:
     label: Player progression
     order: 2003
-    badge:
-        text: Limited release
-        variant: caution
 ---
 
 import { Badge } from '@src/components/Components';
 
-Player progression mark a player's advancement in your game and include the Achievements, Leaderboards, Stats, and Blob Store/Cloud Saves APIs. These can be milestones to create goals for your player to aspire toward. They can also build a passive social community for your players to compare and compete with each other.
+Player progression APIs mark a player's advancement in your game and include the Achievements, Leaderboards, Stats, and Blob Store/Cloud Saves APIs. These can be milestones to create goals for your player to aspire toward. They can also build a passive social community for your players to compare and compete with each other.
 
 Stats are the foundational APIs for your leaderboards and achievements to build off. The blobs or cloud saves are arbitrary saved data you configure for your game. All four of these APIs are scoped to the player, `ngp_player*`, and they are all asynchronous so every call takes a callback.
 
-```
+```c
 CODE REDACTED
 ```
 
@@ -40,32 +37,34 @@ CODE REDACTED
 
 Achievements are binary as locked or unlocked. You <span class="former-link">create and configure achievements</span> in the **Games Workspace**. The SDK uses the **Reference Name** you create, and it cannot be edited once created.
 
-When an achievement is unlocked, it is idempotent (no matter how many times you call it, it has the exact same result as the first call). For example, an achievement that is already unlocked does nothing every time you call it after they've beaten the boss before.
+When an achievement is unlocked, it is idempotent (no matter how many times you call it, it has the exact same result as the first call). For example, if a player beats the boss again, calling unlock on that achievement does nothing.
 ```c
 CODE REDACTED
 ```
 
 ### Company achievements panel
 
-The achievements panel is pre-built for the UI, and you should not build your own. *(Sara note: Related link to the Company modal content?)*
-To call the Neflix achievements panel, use
+The achievements panel is pre-built for the UI, and you should not build your own.
+
+To call the Company achievements panel, use
 ```c
 CODE REDACTED
 ```
 
 ## Leaderboards APIs
 
-The Leaderboards APIs read from the stats your game submits and populates a leaderboard. Like achievements, you <span class="former-link">create leaderboards</span> in the **Games Workspace**. The SDK uses the **Name** you create, and it cannot be edited once created.
+The Leaderboards APIs read from the stats your game submits and populate a leaderboard. Like achievements, you <span class="former-link">create leaderboards</span> in the **Games Workspace**. The SDK uses the **Name** you create, and it cannot be edited once created.
 
 Use these leaderboards functions to call different leaderboard information:
 
 <div class="nowrap-first-col">
+
 | Leaderboard function | Information retrieved |
 | --- | --- |
 | `ngp_leaderboards_get_leaderboard_info` | Get information about a leaderboard itself. |
 | `ngp_leaderboards_get_top_entries` | Get leaderboard entries from the top ranked entry onwards.<br/>Use `ngp_leaderboards_get_more_entries` to show additional entries. |
 | `ngp_leaderboards_get_more_entries` | Get more entries from a leaderboard for pagination.<br/>Use `ngp_leaderboards_get_top_entries` or `ngp_leaderboards_get_player_centric_entries` to get the initial entries.<br/>Use `NGP_LEADERBOARDS_DIRECTION_BEFORE` and `NGP_LEADERBOARDS_DIRECTION_AFTER` for fetching more entries before or after the cursor for pagination. |
-| `ngp_leaderboards_get_player_centric_entries` | Get leaderboard entries the most `max_entries` centered around your currently logged in player versus the global top player. |
+| `ngp_leaderboards_get_player_centric_entries` | Get up to `max_entries` leaderboard entries centered around your currently logged in player versus the global top player. |
 | `ngp_leaderboards_get_player_entry` | Get the current player's entry in the leaderboard. |
 
 </div>
@@ -90,7 +89,7 @@ CODE REDACTED
 
 ### Blob store conflicts
 
-The SDK doesn't pick a winner for you when data conflicts occur between remote and local. It is your responsibility to know your save format and decided to keep the new data, merge, or prompt the player about a data conflict.
+The SDK doesn't pick a winner for you when data conflicts occur between remote and local. It is your responsibility to know your save format and decide whether to keep the new data, merge, or prompt the player about a data conflict.
 
 To resolve blob store conflicts, call `ngp_blobs_write` again with the data you wish to keep. 
 
