@@ -8,6 +8,12 @@ sidebar:
 
 import { Steps } from '@astrojs/starlight/components';
 
+:::caution[Limited release]
+The C SDK is a limited release SDK for Company. It does not follow a standard release schedule, and it is only available to specific partners.
+
+Speak with your Company Producer for more information and access.
+:::
+
 You use the Controller APIs to connect/disconnect, query controller status, and listen for input specifics. For Company, a controller can be the **Company Game Controller**, a keyboard, a mouse, or some combination. When your players pick up a controller, the SDK calls your "add controller" callback. When they put it down, you get your "controller removed" callback. In between, you bind callbacks for the input types you care about and the C SDK pushes input events to you.
 
 ```c
