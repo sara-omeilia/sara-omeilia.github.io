@@ -3,9 +3,6 @@ title: Framework and concepts
 description: Overview of the architectural framework and core concepts of the C SDK.
 sidebar:
     order: 2000
-    badge:
-        text: Limited release
-        variant: caution
 ---
 
 :::caution[Limited release]
@@ -38,8 +35,8 @@ CODE REDACTED
 
 | Context object | Description |
 | --- | --- |
-| `ngp_sdk` | The top-level SDK. It represents the SDK runtime and contains functions that don’t require authentication or map specifically to a Player. |
-| `ngp_account` | Obtained through `ngp_sdk_log_in`. This represents the user’s account within Company. It currently provides only the `ngp_player`. |
+| `ngp_sdk` | The top-level SDK. It represents the SDK runtime and contains functions that don't require authentication or map specifically to a Player. |
+| `ngp_account` | Obtained through `ngp_sdk_log_in`. This represents the user's account within Company. It currently provides only the `ngp_player`. |
 | `ngp_player` | Obtained through `ngp_account` functions or events. This represents a specific Player in the Company ecosystem. It maps one-to-one with a Company Profile. Most backend services are scoped to the Player like blob store, achievements, etc. |
 
 </div>
@@ -58,26 +55,26 @@ All state changes and all callbacks happen synchronously on the thread that you 
 Many of the APIs in the C SDK are asynchronous, and present this constraint in the form of callbacks.
 
 The async callback convention we follow includes:
-- Async callbacks always have a `ngp_result` if it is fallible. The C SDK assumes you check `result.ok` is `true` before using the data.
+- Async callbacks always have an `ngp_result` if they are fallible. The C SDK assumes you check `result.ok` is `true` before using the data.
 - We return a single object that contains all relevant info to the callback rather than multiple parameters.
-    - If applicable, the context object is always one of these parameterse.
+    - If applicable, the context object is always one of these parameters.
 - We also take a `void* user_data`.
 
-The C SDK use the `void* user_data` pattern to enable you to associate arbitrary data with a callback. The SDK doesn't do anything with this except copy it into the callback when it is called, so you can use it to correlate callbacks within your own codebase. The C++ API makes heavy use of these for this exact purpose.
+The C SDK uses the `void* user_data` pattern to enable you to associate arbitrary data with a callback. The SDK doesn't do anything with this except copy it into the callback when it is called, so you can use it to correlate callbacks within your own codebase. The C++ API makes heavy use of these for this exact purpose.
 
-Here is an example of the async callback pattern:
+The following is an example of the async callback pattern:
 ```c
 CODE REDACTED
 ```
 
 The C SDK also contains the concept of events, which follow a similar pattern. These are raised by the SDK instead of in response to a function call. You need to bind and unbind callbacks for events. Callbacks added to an event work the same way as async callbacks.
 
-Here is an example of the event pattern:
+The following is an example of the event pattern:
 ```c
 CODE REDACTED
 ```
 
-Events often have context objects like any other function. You need to make sure you call the removal function before the context object is destroyed. Any context objects that can be destroyed have a related event that always fire just before they are freed.
+Events often have context objects like any other function. You need to make sure you call the removal function before the context object is destroyed. Any context objects that can be destroyed have a related event that always fires just before they are freed.
 
 For example, controllers have `ngp_sdk_add_controller_removed_callback`. During this callback, you should unbind any events bound to that controller. After the callback it will be freed.
 
@@ -86,9 +83,9 @@ For example, controllers have `ngp_sdk_add_controller_removed_callback`. During 
 The only memory you need to worry about from the C SDK is the `ngp_sdk` object itself. The SDK assumes you will destroy the object created by `ngp_sdk_create` with `ngp_sdk_destroy`. Every other pointer you received, including C strings, is freed at an appropriate time within the SDK.
 
 ##### Synchronous return values as pointers or with pointers
-For context objects like `ngp_sdk` or `ngp_controller`, the lifetime of all pointers to the object are the same, and are freed immediately following a relevant remove/destroyed event. For example, `ngp_controller*` returned from `ngp_sdk_get_controller_at` is valid until the `controller_removed` for that pointer fires.
+For context objects like `ngp_sdk` or `ngp_controller`, the lifetime of all pointers to the object is the same, and are freed immediately following a relevant remove/destroyed event. For example, `ngp_controller*` returned from `ngp_sdk_get_controller_at` is valid until the `controller_removed` for that pointer fires.
 
-For data pointers, such as `const char*` return from a function, the pointer is guaranteed valid until the next call to `ngp_sdk_run_callbacks` unless otherwise specified. Therefore, he data model of the SDK runtime is also bound to `ngp_sdk_run_callbacks`. You should use it immediately and/or explicitly copy any data you want to cache.
+For data pointers, such as `const char*` returned from a function, the pointer is guaranteed valid until the next call to `ngp_sdk_run_callbacks` unless otherwise specified. Therefore, the data model of the SDK runtime is also bound to `ngp_sdk_run_callbacks`. You should use it immediately and/or explicitly copy any data you want to cache.
 
 ##### Async callbacks and events
 Any non-context-object data passed to these callbacks is freed after the function is called. The C SDK assumes you explicitly copy any data (such as C strings) that you want to keep outside of the callback scope.
@@ -96,9 +93,7 @@ Any non-context-object data passed to these callbacks is freed after the functio
 
 ## Feature APIs
 
-Once you Get started with the C SDK, you can integrate all the different features of the SDK into your game. All of these features build on the base APIs of the SDK, Company account, and specific player profile.
-
->*Sara note: May move the base API table information into the larger table as part of each feature's description. "X builds from the SDK" or "Y builds from the player profile"*
+Once you [get started with the C SDK](/writing-samples/get-started-c/), you can integrate all the different features of the SDK into your game. All of these features build on the base APIs of the SDK, Company account, and specific player profile.
 
 | What you want to do | The base API you need |
 | --- | --- |
@@ -113,15 +108,15 @@ Depending on the game you are building, you may or may not use all available fea
 | Feature | Description |
 | --- | --- |
 | [**Achievements**](/writing-samples/progression-c/#achievements-apis) | Milestones for your players to complete |
-| [**Blob Store (Cloud Saves)**](/writing-samples/progression-c/#blob-storecloud-saves-apis) | Opaque data scoped per-player to use as save file, custom configurations, and more |
+| [**Blob store (Cloud saves)**](/writing-samples/progression-c/#blob-storecloud-saves-apis) | Opaque data scoped per-player to use as save file, custom configurations, and more |
 | [**Controller**](/writing-samples/input-c/) | Connect/disconnect, query controller status, and listen for input specifics for various controller inputs |
 | [**Custom connect flow**](/writing-samples/system-integration-c/#custom-connect-flow) | For Cloud games using the custom connect flow to connect the **Company Game Controller**  |
-| [**Deeplinks**](/writing-samples/system-integration-c/#deeplinks-apis) | Streamline a player’s journey to specific content, bypassing navigation through introductory menus and selections |
+| [**Deeplinks**](/writing-samples/system-integration-c/#deeplinks-apis) | Streamline a player's journey to specific content, bypassing navigation through introductory menus and selections |
 | [**Display**](/writing-samples/system-integration-c/#display-apis) | Informs you if your game is visible, what is the input/video latency, and what input devices are available |
 | [**Encoder**](/writing-samples/telemetry-session-c/#encoder-apis) | Hints for Company's cloud video encoder to highlight important screen regions, signal scene changes, and more |
 | [**Latency**](/writing-samples/telemetry-session-c/#latency-apis) | The data structures for latency measurements |
 | [**Leaderboards**](/writing-samples/progression-c/#leaderboards-apis) | Show your players how they rank amongst each other |
-| [**Company overlay modal**](/writing-samples/system-integration-c/#company-modal-overlay) | Pause your game when the Company modal overlays the UI |
+| [**Company modal overlay**](/writing-samples/system-integration-c/#company-modal-overlay) | Pause your game when the Company modal overlays the UI |
 | [**Profiles**](/writing-samples/social-c/#profiles-apis) | A player's identity and UI name (game handle) |
 | [**Safety**](/writing-samples/social-c/#safety-apis) | The moderation gate for any player-generated text |
 | [**Session**](/writing-samples/telemetry-session-c/#session-apis) | Read-only info about the current play session (server location, context variables, session ID) |
